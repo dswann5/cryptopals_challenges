@@ -4,7 +4,6 @@ import base64
 import binascii
 import string
 
-
 def hex_to_base64(hex_string):
     ''' Set 1 Challenge 1:
         Convert hex to base64
@@ -29,13 +28,42 @@ def single_byte_xor_cipher(hex_string, plaintext):
         Tests the decrypted plaintext against the given plaintext
         Returns the byte char which results in a match when used as the decryption key
     '''
+    score_threshold = 3
+
     decoded_string = binascii.unhexlify(hex_string)
     # Iterate through all printable ascii characters
     for char1 in string.printable:
         phrase = [ord(char1) ^ ord(char2) for char2 in decoded_string]
         decoded_phrase = ''.join([chr(c) for c in phrase])
+        score = score_plaintext(decoded_phrase)
+        if score > score_threshold:
+            print str(score) + '\t ' + decoded_phrase
         if decoded_phrase == plaintext:
+            print '"%s" matches the given plaintext with score %s' % (decoded_phrase, score)
             return char1
+
+
+def score_plaintext(plaintext):
+    """ From https://en.wikipedia.org/wiki/Letter_frequency """
+    char_freq = {'a': .08167, 'b': .01492, 'c': .02782, 'd': .04253, 'e': .12702, 'f': .02228,
+                 'g': .02015, 'h': .06094, 'i': .06966, 'j': .00153, 'k': .00772, 'l': .04025,
+                 'm': .02406, 'n': .06749, 'o': .07507, 'p': .01929, 'q': .00095, 'r': .05987,
+                 's': .06327, 't': .09056, 'u': .02758, 'v': .00978, 'w': .02360, 'x': .00150,
+                 'y': .01974, 'z': .00074}
+    penalty = 10
+
+    # Calculate score for the phrase, ensure ASCII and ignoring puncuation
+    score = 0
+    for char in plaintext:
+        if ord(char) > 127:
+            score -= penalty
+        elif ord(char) < 32 and not (ord(char) == 10 or ord(char) == 13):
+            score += -5
+        else:
+            # ignore punctuation
+            if char in char_freq:
+                score += char_freq[char]
+    return score/float(len(plaintext)) * 100
 
 
 def main():
